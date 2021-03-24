@@ -1,0 +1,49 @@
+config:
+  target: "https://api.todoist.com"
+  processor: "./randomData.js"
+  phases:
+    - duration: 10
+      arrivalRate: 2
+      name: "Task"
+  defaults: 
+   headers:
+     Authorization: Bearer {{ $processEnvironment.TOKEN }}
+     Content-type: application/json
+
+scenarios:
+  - flow:
+      - function: "generateRandomData"
+      - get:
+          url: "/rest/v1/tasks"
+      - post:
+          url: "/rest/v1/tasks"
+          json:
+           content: "Visit to {{ randomFriend }}"
+           due_string: "tomorrow at 16:00"
+           due_lang: "en"
+           priority: "{{ randomPriority }}"
+          capture:
+           json: "$.id"
+           as: "taskId"          
+      - log: "Current task id would be: {{ taskId }}"
+      - log: "Current task content would be: Visit to {{ randomFriend }} with priority: {{ randomPriority }}"
+      - get:
+          url: "/rest/v1/tasks/{{ taskId }}"
+          capture:
+            - json: "$.id"
+              as: "id"  
+            - json: "$.content"
+              as: "content"  
+            - json: "$.priority"
+              as: "priority"                      
+      - log: "Current task id is: {{id}} with content: {{ content }} and priority: {{ priority }}"
+      - post:
+          url: "/rest/v1/tasks/"
+          json:
+           content: "Updated"
+      - post:
+          url: "/rest/v1/tasks/{{ taskId }}/close"
+      - post:
+          url: "/rest/v1/tasks/{{ taskId }}/reopen"
+      - delete:
+          url: "/rest/v1/tasks/{{ taskId }}"     
